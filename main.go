@@ -96,9 +96,9 @@ func OpenFile(filename string) {
 	index = 0
 	filename = strings.TrimSpace(filename)
 	switch path.Ext(filename) {
-	case ".zip":
+	case ".zip", ".cbz":
 		go ReadZip(filename)
-	case ".rar":
+	case ".rar", ".cbr":
 		go ReadRar(filename)
 	default:
 		fmt.Printf("Unknown extension: '%s'\n", path.Ext(filename))
