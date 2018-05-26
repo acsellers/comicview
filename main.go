@@ -105,7 +105,6 @@ func OpenFile(filename string) {
 		fmt.Println([]byte(path.Ext(filename)))
 		return
 	}
-	Sort(pages)
 	DrawCurrent()
 }
 func SetupEvents() {
@@ -262,9 +261,12 @@ func (p ps) Less(i, j int) bool {
 func (p ps) Swap(i, j int) {
 	p[i], p[j] = p[j], p[i]
 }
-func Sort(pages []*Page) {
+func Sort() {
 	pagesLock.Lock()
 	sort.Sort(ps(pages))
+	for _, p := range pages {
+		fmt.Println(p.Name)
+	}
 	pagesLock.Unlock()
 
 }
@@ -277,8 +279,18 @@ func ReadZip(filename string) {
 		}
 		return
 	}
+	window.SetTitle("Loading...")
+	names := []string{}
+	nameTo := map[string]*zip.File{}
 	for _, zf := range f.File {
-		fmt.Println("name: ", zf.Name)
+		if !zf.FileInfo().IsDir() {
+			names = append(names, zf.Name)
+			nameTo[zf.Name] = zf
+		}
+	}
+	sort.Strings(names)
+	for _, name := range names {
+		zf := nameTo[name]
 		if !zf.FileInfo().IsDir() {
 			r, e := zf.Open()
 			if e != nil {
@@ -294,6 +306,7 @@ func ReadZip(filename string) {
 			}
 		}
 	}
+	DrawCurrent()
 	f.Close()
 }
 
@@ -306,6 +319,7 @@ func ReadRar(filename string) {
 		}
 		return
 	}
+	window.SetTitle("Loading...")
 	rf, err := f.Next()
 	for err == nil && rf != nil {
 		fmt.Println(rf.Name)
@@ -327,6 +341,7 @@ func ReadRar(filename string) {
 		rf, err = f.Next()
 	}
 	f.Close()
+	Sort()
 }
 
 var validExtensions = map[string]bool{".png": true, ".jpeg": true, ".jpg": true, ".gif": true}
@@ -340,7 +355,6 @@ func DecodePage(name string, content io.Reader) error {
 		pagesLock.Lock()
 		pages = append(pages, &Page{Name: name, Buf: buf})
 		pagesLock.Unlock()
-		DrawCurrent()
 		return nil
 	}
 	return errors.New("Unrecognized page")
